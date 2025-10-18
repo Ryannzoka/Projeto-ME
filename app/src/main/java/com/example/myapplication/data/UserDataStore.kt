@@ -2,14 +2,12 @@ package com.example.myapplication.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import org.json.JSONObject
 
 private const val PREFS_NAME = "user_prefs"
-
 private const val KEY_IS_LOGGED_IN = "is_logged_in"
-private const val KEY_USERNAME = "username"
-private const val KEY_VALIDATION_USERNAME = "validation_username"
-private const val KEY_EMAIL = "email"
-private const val KEY_PASSWORD = "password"
+private const val KEYS_USERS_DATA = "users_data"
+private const val KEY_CURRENT_USER = "current_user"
 
 object UserDataStore {
 
@@ -20,53 +18,101 @@ object UserDataStore {
     }
 
     fun saveUserData(username: String, validationUsername: String, email: String, password: String) {
+        val jsonString = sharedPreferences.getString(KEYS_USERS_DATA, "{}")
+        val usersJson = JSONObject(jsonString ?: "{}")
+
+        val userJson = JSONObject().apply {
+            put("username", username)
+            put("validationUsername", validationUsername)
+            put("email", email)
+            put("password", password)
+        }
+
+        usersJson.put(validationUsername, userJson)
 
         with(sharedPreferences.edit()) {
-            putString(KEY_USERNAME, username)
-            putString(KEY_VALIDATION_USERNAME, validationUsername)
-            putString(KEY_EMAIL, email)
-            putString(KEY_PASSWORD, password)
+            putString(KEYS_USERS_DATA, usersJson.toString())
             apply()
         }
     }
 
-    // FUNÇÃO SIMPLIFICADA: Altera apenas o estado de login
-    fun setLoggedIn(isLoggedIn: Boolean) {
+    fun getUser(validationUsernameOrEmail: String): JSONObject? {
+        val jsonString = sharedPreferences.getString(KEYS_USERS_DATA, "{}")
+        val usersJson = JSONObject(jsonString ?: "{}")
+
+        val keys = usersJson.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val userJson = usersJson.getJSONObject(key)
+            val email = userJson.getString("email")
+            val validationUsername = userJson.getString("validationUsername")
+
+            if (validationUsernameOrEmail == email.lowercase() || validationUsernameOrEmail == validationUsername) {
+                return userJson
+            }
+        }
+        return null
+    }
+
+    fun userExists(validationUsername: String? = null, email: String? = null): Boolean {
+        val jsonString = sharedPreferences.getString(KEYS_USERS_DATA, "{}")
+        val usersJson = JSONObject(jsonString ?: "{}")
+
+        val keys = usersJson.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val userJson = usersJson.getJSONObject(key)
+            val userEmail = userJson.getString("email")
+            val userValidationUsername = userJson.getString("validationUsername")
+
+            if (validationUsername != null && userValidationUsername == validationUsername) {
+                return true
+            }
+            if (email != null && userEmail == email) {
+                return true
+            }
+        }
+        return false
+    }
+
+    fun setLoggedInUser(validationUsername: String) {
         with(sharedPreferences.edit()) {
-            putBoolean(KEY_IS_LOGGED_IN, isLoggedIn)
+            putBoolean(KEY_IS_LOGGED_IN, true)
+            putString(KEY_CURRENT_USER, validationUsername)
             apply()
         }
     }
 
-    // Retorna o estado de login
     fun isLoggedIn(): Boolean {
         return sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false)
     }
 
-    // Retorna o nome de usuário salvo (com a capitalização original)
+    fun getCurrentUser(): JSONObject? {
+        val currentUserKey = sharedPreferences.getString(KEY_CURRENT_USER, null)
+        if (currentUserKey == null) return null
+
+        val jsonString = sharedPreferences.getString(KEYS_USERS_DATA, "{}")
+        val usersJson = JSONObject(jsonString ?: "{}")
+
+        return if (usersJson.has(currentUserKey)) {
+            usersJson.getJSONObject(currentUserKey)
+        } else {
+            null
+        }
+    }
+
     fun getUsername(): String? {
-        return sharedPreferences.getString(KEY_USERNAME, null)
+        return getCurrentUser()?.optString("username")
     }
 
-    // Retorna o nome de usuário para validação (em minúsculas)
-    fun getValidationUsername(): String? {
-        return sharedPreferences.getString(KEY_VALIDATION_USERNAME, null)
-    }
-
-    // Retorna o e-mail salvo
     fun getEmail(): String? {
-        return sharedPreferences.getString(KEY_EMAIL, null)
+        return getCurrentUser()?.optString("email")
     }
 
-    // Retorna a senha salva
-    fun getPassword(): String? {
-        return sharedPreferences.getString(KEY_PASSWORD, null)
-    }
-
-    // Limpa apenas o estado de login, mantendo os dados do usuário.
     fun clearLoginState() {
         with(sharedPreferences.edit()) {
             remove(KEY_IS_LOGGED_IN)
+            remove(KEY_CURRENT_USER)
             apply()
         }
     }

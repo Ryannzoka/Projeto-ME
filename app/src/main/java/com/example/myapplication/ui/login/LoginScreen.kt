@@ -24,7 +24,6 @@ fun LoginScreen(
     var loginError by remember { mutableStateOf(false) }
     val isLoginEnabled = email.isNotBlank() && password.isNotBlank()
 
-    // O Column é usado para organizar os elementos verticalmente
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -32,19 +31,17 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Título da tela
         Text(
             text = "Login",
             style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
-        // Campo para o e-mail ou nome de usuário
         OutlinedTextField(
             value = email,
             onValueChange = {
                 email = it
-                loginError = false // Reseta o erro ao digitar
+                loginError = false
             },
             label = { Text("Email ou Usuário") },
             singleLine = true,
@@ -52,12 +49,11 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo para a senha
         OutlinedTextField(
             value = password,
             onValueChange = {
                 password = it
-                loginError = false // Reseta o erro ao digitar
+                loginError = false
             },
             label = { Text("Senha") },
             singleLine = true,
@@ -66,19 +62,16 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Botão de login
         Button(
             onClick = {
                 val trimmedAndLowercasedEmailOrUsername = email.trim().lowercase()
+                val userJson = UserDataStore.getUser(trimmedAndLowercasedEmailOrUsername)
 
-                val savedValidationUsername = UserDataStore.getValidationUsername()
-                val savedEmail = UserDataStore.getEmail()
-                val savedPassword = UserDataStore.getPassword()
-
-                val isLoginSuccessful = (trimmedAndLowercasedEmailOrUsername == savedEmail || trimmedAndLowercasedEmailOrUsername == savedValidationUsername) && password == savedPassword
+                val isLoginSuccessful = userJson != null && userJson.getString("password") == password
 
                 if (isLoginSuccessful) {
-                    UserDataStore.setLoggedIn(isLoggedIn = true)
+                    val validationUsername = userJson!!.getString("validationUsername")
+                    UserDataStore.setLoggedInUser(validationUsername)
                     onNavigateToMain()
                 } else {
                     loginError = true
@@ -103,7 +96,6 @@ fun LoginScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Botão para navegar para a tela de cadastro
         Button(
             onClick = onNavigateToCadastro,
             modifier = Modifier.fillMaxWidth(),

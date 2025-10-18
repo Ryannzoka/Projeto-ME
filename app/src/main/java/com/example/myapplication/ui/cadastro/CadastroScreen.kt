@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.example.myapplication.data.UserDataStore
 import java.util.regex.Pattern
 
-// Expressão regular simples para validação de e-mail.
 private val EMAIL_ADDRESS_PATTERN = Pattern.compile(
     "[a-zA-Z0-9\\+\\.\\_\\%\\-\\+]{1,256}" +
             "\\@" +
@@ -36,7 +35,6 @@ fun CadastroScreen(onNavigateBack: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Validação de formato
     val isEmailFormatValid = EMAIL_ADDRESS_PATTERN.matcher(email).matches()
     val isPasswordLengthValid = password.length >= 6
 
@@ -126,12 +124,9 @@ fun CadastroScreen(onNavigateBack: () -> Unit) {
                 val trimmedAndLowercasedUsername = trimmedUsername.lowercase()
                 val trimmedEmail = email.trim()
 
-                val savedValidationUsername = UserDataStore.getValidationUsername()
-                val savedEmail = UserDataStore.getEmail()
-
-                if (trimmedAndLowercasedUsername == savedValidationUsername) {
+                if (UserDataStore.userExists(validationUsername = trimmedAndLowercasedUsername)) {
                     errorMessage = "Este nome de usuário já está em uso."
-                } else if (trimmedEmail == savedEmail) {
+                } else if (UserDataStore.userExists(email = trimmedEmail)) {
                     errorMessage = "Este e-mail já está em uso."
                 } else {
                     UserDataStore.saveUserData(
@@ -140,10 +135,8 @@ fun CadastroScreen(onNavigateBack: () -> Unit) {
                         email = trimmedEmail,
                         password = password
                     )
-                    UserDataStore.setLoggedIn(isLoggedIn = false)
 
                     Toast.makeText(context, "Conta criada com sucesso!", Toast.LENGTH_SHORT).show()
-
                     onNavigateBack()
                 }
             },
