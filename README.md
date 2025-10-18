@@ -44,8 +44,3 @@ Este é um aplicativo Android desenvolvido para a vaga de estágio em Desenvolvi
 1. Clone o repositório.
 2. Abra no Android Studio.
 3. Execute em um dispositivo ou emulador Android (API 24+).
-
-## Problemas conhecidos
-
-- Problema de armazenamento com dados de usuários, na qual ao registrar um novo ele sobrescreve o anterior.
-- Leve problema de design, na qual a cor da barra de notificação destoa do resto do projeto.
